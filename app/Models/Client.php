@@ -18,4 +18,9 @@ class Client extends Model
         'Gouvernorat',
         'Delegation',
     ];
+
+    public function carts()
+    {
+        return $this->hasOne(Cart::class, 'client_id'); // This links the client_id in the carts table
+    }
 }

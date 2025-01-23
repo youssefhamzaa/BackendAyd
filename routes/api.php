@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProduitController;
@@ -7,6 +8,18 @@ use App\Http\Controllers\SubCategorieController;
 use App\Http\Controllers\ReviewsDataController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+
+Route::prefix('cart')->group(function () {
+    Route::get('/{clientId}', [CartController::class, 'show']); // Get cart by clientId
+    Route::post('/{clientId}/item', [CartController::class, 'addItem']); // Add item to cart
+    Route::put('/{clientId}/item/{cartItemId}', [CartController::class, 'updateItem']); // Update item
+    Route::delete('/{clientId}/item/{cartItemId}', [CartController::class, 'removeItem']); // Remove item from cart
+});
+// Define the route for filtering products
+Route::get('produits/filter', [ProduitController::class, 'filterProducts']);
+
+Route::get('/produitsPaginate', [ProduitController::class, 'produitsPaginate']);
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -34,7 +47,6 @@ Route::middleware('api')->group(function () {
 });
 
 // Define the route for filtering products
-Route::get('produits/filter', [ProduitController::class, 'filterProducts']);
 
 Route::get('clients/count', [ClientController::class, 'countClients']);
 Route::resource('clients', ClientController::class);

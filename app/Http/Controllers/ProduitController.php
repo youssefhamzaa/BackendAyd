@@ -335,64 +335,110 @@ public function getTopRatedProducts()
         ], 500);
     }
 }
-// public function filterProducts(Request $request)
-// {
-//     try {
-//         $query = Produit::query();
+public function filterProducts(Request $request)
+{
+    try {
+        $query = Produit::query();
 
-//         // Filter by "Newest" products (assumes 'created_at' exists)
-//         if ($request->has('newest') && $request->input('newest') == true) {
-//             $query->orderBy('created_at', 'desc'); // Order by the newest created
-//         }
+        // Apply filters based on query parameters
+        if ($request->has('newest') && $request->boolean('newest')) {
+            $query->orderBy('created_at', 'desc'); // Order by newest
+        }
 
-//         // Filter by "TopRated" products based on 'Rating' in descending order
-//         if ($request->has('topRated') && $request->input('topRated') == true) {
-//             $query->orderBy('Rating', 'desc'); // Order by the highest rating
-//         }
+        if ($request->has('topRated') && $request->boolean('topRated')) {
+            $query->orderBy('Rating', 'desc'); // Order by highest rating
+        }
 
-//         // Filter by "BestSeller" products, ordered by sales in descending order
-//         if ($request->has('bestSellers') && $request->input('bestSellers') == true) {
-//             $query->where('BestSeller', true)->orderBy('Sales', 'desc'); // Order by sales
-//         }
+        if ($request->has('bestSellers') && $request->boolean('bestSellers')) {
+            $query->where('BestSeller', true)->orderBy('Sales', 'desc'); // Order by best sellers
+        }
 
-//         // Execute the query
-//         $filteredProducts = $query->get();
+        // Execute the query and retrieve the filtered results
+        $filteredProducts = $query->get();
 
-//         // Format the response as needed
-//         $produitsFormates = $filteredProducts->map(function ($produit) {
-//             return [
-//                 'UID' => $produit->UID,
-//                 'Product' => $produit->Product,
-//                 'Description' => $produit->Description,
-//                 'Category' => $produit->subCategory->category->Name, // Extract category name
-//                 'SubCategory' => $produit->subCategory->Name, // Extract subcategory name
-//                 'Brand' => $produit->Brand,
-//                 'OldPrice' => $produit->OldPrice,
-//                 'Price' => $produit->Price,
-//                 'Stock' => $produit->Stock,
-//                 'Rating' => $produit->Rating,
-//                 'HotProduct' => $produit->HotProduct,
-//                 'BestSeller' => $produit->BestSeller,
-//                 'TopRated' => $produit->TopRated,
-//                 'Order' => $produit->Order,
-//                 'Sales' => $produit->Sales,
-//                 'IsFeatured' => $produit->IsFeatured,
-//                 'Image' => json_decode($produit->Image), // Decode the JSON for Image
-//                 'Tags' => json_decode($produit->Tags), // Decode the JSON for Tags
-//                 'Variants' => json_decode($produit->Variants), // Decode the JSON for Variants
-//             ];
-//         });
+        // Format the results for response
+        $formattedProducts = $filteredProducts->map(function ($produit) {
+            return [
+                'UID' => $produit->UID,
+                'Product' => $produit->Product,
+                'Description' => $produit->Description,
+                'Category' => $produit->subCategory->category->Name ?? null, // Extract category name
+                'SubCategory' => $produit->subCategory->Name ?? null, // Extract subcategory name
+                'Brand' => $produit->Brand,
+                'OldPrice' => $produit->OldPrice,
+                'Price' => $produit->Price,
+                'Stock' => $produit->Stock,
+                'Rating' => $produit->Rating,
+                'HotProduct' => $produit->HotProduct,
+                'BestSeller' => $produit->BestSeller,
+                'TopRated' => $produit->TopRated,
+                'Order' => $produit->Order,
+                'Sales' => $produit->Sales,
+                'IsFeatured' => $produit->IsFeatured,
+                'Image' => json_decode($produit->Image), // Decode the JSON for Image
+                'Tags' => json_decode($produit->Tags), // Decode the JSON for Tags
+                'Variants' => json_decode($produit->Variants), // Decode the JSON for Variants
+            ];
+        });
 
-//         // Return the filtered and formatted response
-//         return response()->json($produitsFormates);
+        // Return the filtered and formatted response
+        return response()->json($formattedProducts);
 
-//     } catch (\Exception $e) {
-//         return response()->json([
-//             'message' => 'Error filtering products',
-//             'error' => $e->getMessage()
-//         ], 500);
-//     }
-// }
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Error filtering products',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+public function produitsPaginate()
+{
+    try {
+        // Get the perPage value from the request, defaulting to 2 items per page
+        $perPage = request()->input('pageSize', 2);
+
+        // Retrieve paginated products with the 'subCategory' relationship
+        $produits = Produit::with('subCategory')->paginate($perPage);
+
+        // Format the response like you want it
+        $produitsFormates = $produits->items();
+
+        $formattedResponse = array_map(function ($produit) {
+            return [
+                'id' => $produit->id,
+                'UID' => $produit->UID,
+                'Product' => $produit->Product,
+                'Description' => $produit->Description,
+                'Category' => $produit->subCategory->category->Name, // Extract category name
+                'SubCategory' => $produit->subCategory->Name, // Extract subcategory name
+                'Brand' => $produit->Brand,
+                'OldPrice' => $produit->OldPrice,
+                'Price' => $produit->Price,
+                'Stock' => $produit->Stock,
+                'Rating' => $produit->Rating,
+                'HotProduct' => $produit->HotProduct,
+                'BestSeller' => $produit->BestSeller,
+                'TopRated' => $produit->TopRated,
+                'Order' => $produit->Order,
+                'Sales' => $produit->Sales,
+                'IsFeatured' => $produit->IsFeatured,
+                'Image' => json_decode($produit->Image), // Decode the JSON for Image
+                'Tags' => json_decode($produit->Tags), // Decode the JSON for Tags
+                'Variants' => json_decode($produit->Variants), // Decode the JSON for Variants
+            ];
+        }, $produitsFormates);
+
+        // Return the formatted response including the products and total pages
+        return response()->json([
+            'products' => $formattedResponse,  // The formatted products list
+            'totalPages' => $produits->lastPage(),  // Total number of pages
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => "Selection impossible: {$e->getMessage()}"
+        ]);
+    }
+}
 
 
 }
